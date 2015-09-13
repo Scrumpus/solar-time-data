@@ -1,0 +1,134 @@
+<!doctype html>
+<html ng-App="rfApp">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<link rel="stylesheet" href="http://css-spinners.com/css/spinner/whirly.css" type="text/css">
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+	<body ng-controller="solarCtrl" ng-class="{noscroll:selectedRow}" ng-cloak>
+		<div class="container">
+
+			<div class="jumbotron">
+				<h1>Solar-Time Analysis</h1>
+				<p>Enter an address and date range to get solar-time analysis for each date!</p>
+				<p>Click on a specific date to get more solar data</p>
+				<p>This site uses the <a onclick="window.open('http://sunrise-sunset.org/api')">Sunrise Sunset api</a> and the <a onclick="window.open('https://developers.google.com/maps/documentation/geocoding/intro#geocoding')">Google Geocoding API</a> to obtain data</p>
+			</div>
+	
+			<form name="solarForm" ng-submit="submit(solarForm)" novalidate>
+				<div class="row">
+					<div class="form-group col-md-3">
+						<label>Address:</label>
+						<input type="address" name="address" class="form-control" ng-model="address" required>
+						<p class="error" ng-show="solarForm.address.$error.required && solarForm.$submitted">Please enter an address</p>
+					</div>
+				
+					<div class="form-group col-md-3">
+						<label>Start Date (MM/DD/YY):</label>
+						<input id="start-date" name="startDate" type="text" class="form-control" ng-model="startDate" required pattern="^\d{2}\/\d{2}\/\d{4}" st-max="{{endDate}}">
+						<p class="error" ng-show="solarForm.startDate.$error.required && solarForm.$submitted">Please enter a start date</p>
+						<p class="error" ng-show="solarForm.startDate.$error.pattern && solarForm.$submitted">Invalid date format</p>
+						<p class="error" ng-show="solarForm.startDate.$error.stMax && solarForm.$submitted">Start date cannot exceed end date</p>
+					</div>
+
+					<div class="form-group col-md-3">
+						<label>End Date (MM/DD/YY):</label>
+						<input id="end-date" name="endDate" type="text" class="form-control" ng-model="endDate" required pattern="^\d{2}\/\d{2}\/\d{4}">
+						<p class="error" ng-show="solarForm.endDate.$error.required && solarForm.$submitted">Please enter an end date</p>
+						<p class="error" ng-show="solarForm.endDate.$error.pattern && solarForm.$submitted">Invalid date format</p>
+					</div>
+
+					<div class="form-group col-md-3">
+						<label>US Time Zone</label>
+						<select class="form-control" ng-model="timezoneOffset" ng-change="updateTimezone()">
+							<option value="0" selected></option>
+							<option value="-11">Samoa</option>
+							<option value="-10">Hawaii&#45;Aleutian</option>
+							<option value="-9">Alaska</option>
+							<option value="-8">Pacific</option>
+							<option value="-7">Mountain</option>
+							<option value="-6">Central</option>
+							<option value="-5">Eastern</option>
+							<option value="-4">Atlantic</option>
+							<option value="10">Chamorro</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="form-group col-md-4 col-md-offset-4">
+						<button class="btn btn-primary btn-lg btn-block">Submit</button>
+					</div>
+				</div>
+					
+			</form>
+			
+			
+
+			<table class="table table-hover table-bordered" ng-show="loaded">
+
+				<thead>
+					<th>Date <a class="order" ng-click="reverseOrder()">{{order}}<span class="arrow" ng-class="{reverse:reverse}"></span></span></th>
+					<th>Sunrise Time</th>
+					<th>Sunset Time</th>
+					<th>Day Length</th>
+				</thead>
+				
+				<tbody>
+					<tr ng-repeat="row in rows | orderBy:'date':reverse" ng-click="selectRow(row, $index)">
+					<td>{{row.date}}</td>
+					<td>{{row.solarData.sunrise}}</td>
+					<td>{{row.solarData.sunset}}</td>
+					<td>{{row.solarData.day_length}}</td>
+					</tr>
+				</tbody>
+
+			</table>
+
+
+			<div id="error-message" ng-show="errorMessage">{{errorMessage}}</div>
+
+			<div id="loading" ng-show="loading">
+				<p>Getting data from {{loadingDate}}</p>
+				<div class="whirly-loader">
+				  Loading…
+				</div>
+			</div>
+
+			<div id="overlay" ng-show="selectedRow" ng-click="overlayClose($event)">
+				<div id="overlay-content" ng-show="selectedRow">
+					<div class="overlay-button" id="overlay-exit" ng-click="selectedRow=''">X</div>
+					<div class="overlay-button" id="overlay-left" ng-click="rowLeft()">&#10092;</div>
+					<div class="overlay-button" id="overlay-right" ng-click="rowRight()">&#10093;</div>
+					<h1>{{selectedRow.date}}</h1>
+					<p>Sunrise: {{selectedRow.solarData.sunrise}}</p>
+					<p>Sunset: {{selectedRow.solarData.sunset}}</p>
+					<p>Day Length: {{selectedRow.solarData.day_length}}</p>
+					<p>Solar Noon: {{selectedRow.solarData.solar_noon}}</p>
+					<p>Astronomical Twilight Begin: {{selectedRow.solarData.astronomical_twilight_begin}}</p>
+					<p>Astronomical Twilight End: {{selectedRow.solarData.astronomical_twilight_end}}</p>
+					<p>Civil Twilight Begin: {{selectedRow.solarData.civil_twilight_begin}}</p>
+					<p>Civil Twilight End: {{selectedRow.solarData.civil_twilight_end}}</p>
+					<p>Nautical Twilight Begin: {{selectedRow.solarData.nautical_twilight_begin}}</p>
+					<p>Nautical Twilight End: {{selectedRow.solarData.nautical_twilight_end}}</p>
+					<p>rfNauticalAfternoon: {{selectedRow.solarData.rf_nautical_afternoon}}</p>
+				</div>
+			</div>
+
+		</div>
+
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+		<script>
+		$(function() {
+			$('#start-date').datepicker();
+			$('#end-date').datepicker();
+		})
+		</script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+		<script src="js/app.js"></script>
+	</body>
+</html>
