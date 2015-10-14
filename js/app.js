@@ -16,6 +16,15 @@ function($scope, DateService, GetSunriseSunset, ErrorService, LoadingService) {
 
 	$scope.lastOffset = 0;
 
+	$scope.dateOrder = function(row) {
+		var arr = row.date.split('/');
+		var year = parseInt(arr[2]),
+			day = parseInt(arr[1]),
+			month = parseInt(arr[0]);
+		
+		return year*500 + month*40 + day;
+	}
+
 	//change data according to time zone
 	$scope.updateTimezone = function() {
 		var offset = parseInt($scope.timezoneOffset) - parseInt($scope.lastOffset);

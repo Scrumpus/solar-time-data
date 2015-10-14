@@ -77,7 +77,7 @@
 				</thead>
 				
 				<tbody>
-					<tr ng-repeat="row in rows | orderBy:'date':reverse" ng-click="selectRow(row, $index)">
+					<tr ng-repeat="row in rows | orderBy:dateOrder:reverse" ng-click="selectRow(row, $index)">
 					<td>{{row.date}}</td>
 					<td>{{row.solarData.sunrise}}</td>
 					<td>{{row.solarData.sunset}}</td>
